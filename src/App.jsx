@@ -1,68 +1,63 @@
-import { useState } from "react";
-const movieList = [
-  {
-    Id: "769",
-    Title: "GoodFellas",
-    Year: "1990",
-    Poster:
-      "https://image.tmdb.org/t/p/original/aKuFiU82s5ISJpGZp7YkIr3kCUd.jpg",
-  },
-  {
-    Id: "120",
-    Title: "The Lord of the Rings",
-    Year: "2001",
-    Poster:
-      "https://image.tmdb.org/t/p/original/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg",
-  },
-  {
-    Id: "27205",
-    Title: "Inception",
-    Year: "2010",
-    Poster:
-      "https://image.tmdb.org/t/p/original/ljsZTbVsrQSqZgWeep2B1QiDKuh.jpg",
-  },
-  {
-    Id: "105",
-    Title: "Back to the Future",
-    Year: "1985",
-    Poster:
-      "https://image.tmdb.org/t/p/original/fNOH9f1aA7XRTzl1sAOx9iF553Q.jpg",
-  },
-];
-
-const selectedMovieList = [
-  {
-    Id: "769",
-    Title: "GoodFellas",
-    Year: "1990",
-    Poster:
-      "https://image.tmdb.org/t/p/original/aKuFiU82s5ISJpGZp7YkIr3kCUd.jpg",
-    Duration: 120,
-    Rating: 8.3,
-  },
-  {
-    Id: "120",
-    Title: "The Lord of the Rings",
-    Year: "2001",
-    Poster:
-      "https://image.tmdb.org/t/p/original/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg",
-    Duration: 150,
-    Rating: 8.6,
-  },
-];
+import { useEffect, useState } from "react";
+const api_key = import.meta.env.VITE_API_KEY;
 
 const getAvarage = (array) =>
-  array.reduce((sum, value) => sum + value, 0) / array.length;
+  array.reduce((sum, value) => sum + value, array.length, 0);
+
+// const query = "father";
 
 export default function App() {
-  const [movies, setMovies] = useState(movieList);
-  const [selectedMovies, setSelectedMovies] = useState(movieList);
+  const [query, setQuery] = useState("");
+  const [movies, setMovies] = useState([]);
+  const [selectedMovies, setSelectedMovies] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState("");
 
+  useEffect(
+    function () {
+      async function getMovies() {
+        try {
+          setLoading(true);
+          setErrors("");
+          const res = await fetch(
+            `https://api.themoviedb.org/3/search/movie?api_key=${api_key}&query=${query}`
+          );
+
+          if (!res.ok) {
+            throw new Error("Bilinmeyen bir hata oluştu.");
+          }
+
+          const data = await res.json();
+          if (data.total_results === 0) {
+            throw new Error("Film bulunamadı!");
+          }
+
+          setMovies(data.results);
+        } catch (e) {
+          setErrors(e.message);
+        }
+        setLoading(false);
+        if (query.length < 1) {
+          setMovies([]);
+          setErrors("");
+          return;
+        }
+      }
+      getMovies();
+      //First render(mount)
+      // fetch(
+      //   `https://api.themoviedb.org/3/search/movie?api_key=${api_key}&query=${query}`
+      // )
+      //   .then((res) => res.json())
+      //   .then((data) => setMovies(data.results));
+    },
+    [query]
+  );
   return (
     <>
       <Nav>
         <Logo />
-        <Search />
+        <Search query={query} setQuery={setQuery} />
         <SearchResultNav movies={movies} />
       </Nav>
       <Main>
@@ -70,20 +65,35 @@ export default function App() {
           <div className="col-md-9">
             {" "}
             <ListContainer>
-              <MovieList movies={movies} />
+              {/* {loading ? <Loading /> : <MovieList movies={movies} />} */}
+              {loading && <Loading />}
+              {!loading && !errors && <MovieList movies={movies} />}
+              {errors && <ErrorMessage eMessage={errors} />}
             </ListContainer>
           </div>
           <div className="col-md-3">
             <ListContainer>
               <>
-                <MyListSummary selectedMovieList={selectedMovieList} />
-                <MyMovieList selectedMovieList={selectedMovieList} />
+                <MyListSummary selectedMovieList={selectedMovies} />
+                <MyMovieList selectedMovieList={selectedMovies} />
               </>
             </ListContainer>
           </div>
         </div>
       </Main>
     </>
+  );
+}
+
+function ErrorMessage({ eMessage }) {
+  return <div className="alert alert-danger">{eMessage}</div>;
+}
+
+function Loading() {
+  return (
+    <div className="spinner-border text-secondary" role="status">
+      <span className="visually-hidden">Loading...</span>
+    </div>
   );
 }
 
@@ -104,10 +114,16 @@ function Logo() {
     </div>
   );
 }
-function Search() {
+function Search({ query, setQuery }) {
   return (
     <div className="col-4">
-      <input type="text" className="form-control" placeholder="Film Arayın." />
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        className="form-control"
+        placeholder="Film Arayın."
+      />
     </div>
   );
 }
@@ -144,7 +160,7 @@ function MovieList({ movies }) {
   return (
     <div className="row row-cols-1 row-cols-md-3 row-cols-xl-4 g-4">
       {movies.map((movie) => (
-        <Movie movie={movie} key={movie.Id} />
+        <Movie movie={movie} key={movie.id} />
       ))}
     </div>
   );
@@ -153,12 +169,21 @@ function Movie({ movie }) {
   return (
     <div className="col mb-2">
       <div className="card">
-        <img src={movie.Poster} alt={movie.Title} className="card-img-top" />
+        <img
+          src={
+            movie.poster_path
+              ? `https://media.themoviedb.org/t/p/w440_and_h660_face` +
+                movie.poster_path
+              : "/img/no-image.jpg"
+          }
+          alt={movie.title}
+          className="card-img-top"
+        />
         <div className="card-body">
-          <h6 className="card-title">{movie.Title}</h6>
+          <h6 className="card-title">{movie.title}</h6>
           <div>
             <i className="bi bi-calendar2-date me-1"></i>
-            <span>{movie.Year}</span>
+            <span>{movie.release_date}</span>
           </div>
         </div>
       </div>

@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 folderico-red.ico
+package-lock.json
+desktop.ini
+
+.env
