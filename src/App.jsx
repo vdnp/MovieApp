@@ -12,6 +12,15 @@ export default function App() {
   const [selectedMovies, setSelectedMovies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState("");
+  const [selectMovie, setSelectMovie] = useState(null);
+
+  function handleSelectMovie(id) {
+    setSelectMovie((selectMovie) => (id === selectMovie ? null : id));
+  }
+
+  function handleUnselectMovie() {
+    setSelectMovie(null);
+  }
 
   useEffect(
     function () {
@@ -67,7 +76,13 @@ export default function App() {
             <ListContainer>
               {/* {loading ? <Loading /> : <MovieList movies={movies} />} */}
               {loading && <Loading />}
-              {!loading && !errors && <MovieList movies={movies} />}
+              {!loading && !errors && (
+                <MovieList
+                  movies={movies}
+                  onSelectMovie={handleSelectMovie}
+                  selectMovie={selectMovie}
+                />
+              )}
               {errors && <ErrorMessage eMessage={errors} />}
             </ListContainer>
           </div>
@@ -76,6 +91,12 @@ export default function App() {
               <>
                 <MyListSummary selectedMovieList={selectedMovies} />
                 <MyMovieList selectedMovieList={selectedMovies} />
+                {selectMovie && (
+                  <MovieDetails
+                    selectMovie={selectMovie}
+                    onHandleUnselectMovie={handleUnselectMovie}
+                  />
+                )}
               </>
             </ListContainer>
           </div>
@@ -106,6 +127,7 @@ function Nav({ children }) {
     </nav>
   );
 }
+
 function Logo() {
   return (
     <div className="col-4">
@@ -114,6 +136,7 @@ function Logo() {
     </div>
   );
 }
+
 function Search({ query, setQuery }) {
   return (
     <div className="col-4">
@@ -127,6 +150,7 @@ function Search({ query, setQuery }) {
     </div>
   );
 }
+
 function SearchResultNav({ movies }) {
   return (
     <div className="col-4 text-end">
@@ -134,6 +158,7 @@ function SearchResultNav({ movies }) {
     </div>
   );
 }
+
 function Main({ children }) {
   return <main className="container">{children}</main>;
 }
@@ -156,19 +181,91 @@ function ListContainer({ children }) {
     </div>
   );
 }
-function MovieList({ movies }) {
+
+function MovieList({ movies, onSelectMovie, selectMovie }) {
   return (
     <div className="row row-cols-1 row-cols-md-3 row-cols-xl-4 g-4">
       {movies.map((movie) => (
-        <Movie movie={movie} key={movie.id} />
+        <Movie
+          movie={movie}
+          key={movie.id}
+          onSelectMovie={onSelectMovie}
+          selectMovie={selectMovie}
+        />
       ))}
     </div>
   );
 }
-function Movie({ movie }) {
+
+function MovieDetails({ selectMovie, onHandleUnselectMovie }) {
+  const [movie, setMovie] = useState({});
+  useEffect(
+    function () {
+      async function getMovieDetails() {
+        const res = await fetch(
+          `https://api.themoviedb.org/3/movie/${selectMovie}?api_key=${api_key}`
+        );
+        const data = await res.json();
+        setMovie(data);
+      }
+
+      getMovieDetails();
+    },
+    [selectMovie]
+  );
+  return (
+    <div className="border mb-3 p-2">
+      <div className="row">
+        <div className="col-4">
+          <img
+            src={
+              movie.poster_path
+                ? `https://media.themoviedb.org/t/p/w440_and_h660_face` +
+                  movie.poster_path
+                : "/img/no-image.jpg"
+            }
+            alt={movie.title}
+            className="img-fluid rounded"
+          />
+        </div>
+        <div className="col-8">
+          <h6>{movie.title}</h6>
+          <p>
+            <i className="bi bi-calendar2-date me-1"></i>
+            <span>{movie.release_date}</span>
+          </p>
+          <p>
+            <i className="bi bi-star-fill text-warning"></i>
+            <span>{movie.vote_average}</span>
+          </p>
+        </div>
+        <div className="col-12 border-top p-3 mt-3">
+          <p>{movie.overview}</p>
+          <p>
+            {movie.genres?.map((genre) => (
+              <span key={genre.id} className="badge text-bg-primary me-1">
+                {genre.name}{" "}
+              </span>
+            ))}
+          </p>
+          <button onClick={onHandleUnselectMovie} className="btn btn-danger">
+            Kapat
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Movie({ movie, onSelectMovie, selectMovie }) {
   return (
     <div className="col mb-2">
-      <div className="card">
+      <div
+        className={`card movie ${
+          selectMovie === movie.id ? "selectedMovie" : ""
+        }`}
+        onClick={() => onSelectMovie(movie.id)}
+      >
         <img
           src={
             movie.poster_path
@@ -238,6 +335,7 @@ function MyListSummary({ selectedMovieList }) {
     </div>
   );
 }
+
 function MyMovieList({ selectedMovieList }) {
   return selectedMovieList.map((seleceted) => (
     <MyListMovie seleceted={seleceted} key={seleceted.Id} />
