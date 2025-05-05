@@ -1,8 +1,18 @@
 import { useEffect, useState } from "react";
-const api_key = import.meta.env.VITE_API_KEY;
+import Nav from "../components/Header/Nav";
+import Logo from "../components/Header/Logo";
+import Search from "../components/Header/Search";
+import SearchResultNav from "../components/Header/SearchResult";
+import Main from "../components/Main/Main";
+import ListContainer from "../components/MovieList/ListContainer";
+import MovieList from "../components/MovieList/MovieList";
+import MovieDetails from "../components/MovieList/MovieDetails";
+import Loading from "../components/Main/Loading";
+import ErrorMessage from "../components/Main/ErrorMessage";
+import MyListSummary from "../components/MovieList/MyListSummary";
+import MyMovieList from "../components/MovieList/MyMovieList";
 
-const getAvarage = (array) =>
-  array.reduce((sum, value) => sum + value, array.length, 0);
+const api_key = import.meta.env.VITE_API_KEY;
 
 // const query = "father";
 
@@ -20,6 +30,17 @@ export default function App() {
 
   function handleUnselectMovie() {
     setSelectMovie(null);
+  }
+
+  function handleToAddList(movie) {
+    setSelectedMovies((selectedMovies) => [...selectedMovies, movie]);
+    handleUnselectMovie();
+  }
+
+  function handleDeleteFromList(id) {
+    setSelectedMovies((selectedMovies) =>
+      selectedMovies.filter((m) => m.id !== id)
+    );
   }
 
   useEffect(
@@ -89,13 +110,21 @@ export default function App() {
           <div className="col-md-3">
             <ListContainer>
               <>
-                <MyListSummary selectedMovieList={selectedMovies} />
-                <MyMovieList selectedMovieList={selectedMovies} />
-                {selectMovie && (
+                {selectMovie ? (
                   <MovieDetails
                     selectMovie={selectMovie}
                     onHandleUnselectMovie={handleUnselectMovie}
+                    onAddToList={handleToAddList}
+                    selectedMovies={selectedMovies}
                   />
+                ) : (
+                  <>
+                    <MyListSummary selectedMovieList={selectedMovies} />
+                    <MyMovieList
+                      selectedMovieList={selectedMovies}
+                      onDeleteFromList={handleDeleteFromList}
+                    />
+                  </>
                 )}
               </>
             </ListContainer>
@@ -103,188 +132,6 @@ export default function App() {
         </div>
       </Main>
     </>
-  );
-}
-
-function ErrorMessage({ eMessage }) {
-  return <div className="alert alert-danger">{eMessage}</div>;
-}
-
-function Loading() {
-  return (
-    <div className="spinner-border text-secondary" role="status">
-      <span className="visually-hidden">Loading...</span>
-    </div>
-  );
-}
-
-function Nav({ children }) {
-  return (
-    <nav className="bg-primary text-white p-2">
-      <div className="container">
-        <div className="row align-items-center">{children}</div>
-      </div>
-    </nav>
-  );
-}
-
-function Logo() {
-  return (
-    <div className="col-4">
-      <i className="bi bi-camera-reels me-2"></i>
-      Movie App
-    </div>
-  );
-}
-
-function Search({ query, setQuery }) {
-  return (
-    <div className="col-4">
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className="form-control"
-        placeholder="Film Arayın."
-      />
-    </div>
-  );
-}
-
-function SearchResultNav({ movies }) {
-  return (
-    <div className="col-4 text-end">
-      <strong>{movies.length}</strong> Kayıt bulundu.
-    </div>
-  );
-}
-
-function Main({ children }) {
-  return <main className="container">{children}</main>;
-}
-
-function ListContainer({ children }) {
-  const [isOpenM, setIsOpenM] = useState(true);
-  return (
-    <div className="movie-list">
-      <button
-        className="btn btn-sm btn-outline-primary mb-2"
-        onClick={() => setIsOpenM((val) => !val)}
-      >
-        {isOpenM ? (
-          <i className="bi bi-chevron-up"></i>
-        ) : (
-          <i className="bi bi-chevron-down"></i>
-        )}
-      </button>
-      {isOpenM && children}
-    </div>
-  );
-}
-
-function MovieList({ movies, onSelectMovie, selectMovie }) {
-  return (
-    <div className="row row-cols-1 row-cols-md-3 row-cols-xl-4 g-4">
-      {movies.map((movie) => (
-        <Movie
-          movie={movie}
-          key={movie.id}
-          onSelectMovie={onSelectMovie}
-          selectMovie={selectMovie}
-        />
-      ))}
-    </div>
-  );
-}
-
-function MovieDetails({ selectMovie, onHandleUnselectMovie }) {
-  const [movie, setMovie] = useState({});
-  useEffect(
-    function () {
-      async function getMovieDetails() {
-        const res = await fetch(
-          `https://api.themoviedb.org/3/movie/${selectMovie}?api_key=${api_key}`
-        );
-        const data = await res.json();
-        setMovie(data);
-      }
-
-      getMovieDetails();
-    },
-    [selectMovie]
-  );
-  return (
-    <div className="border mb-3 p-2">
-      <div className="row">
-        <div className="col-4">
-          <img
-            src={
-              movie.poster_path
-                ? `https://media.themoviedb.org/t/p/w440_and_h660_face` +
-                  movie.poster_path
-                : "/img/no-image.jpg"
-            }
-            alt={movie.title}
-            className="img-fluid rounded"
-          />
-        </div>
-        <div className="col-8">
-          <h6>{movie.title}</h6>
-          <p>
-            <i className="bi bi-calendar2-date me-1"></i>
-            <span>{movie.release_date}</span>
-          </p>
-          <p>
-            <i className="bi bi-star-fill text-warning"></i>
-            <span>{movie.vote_average}</span>
-          </p>
-        </div>
-        <div className="col-12 border-top p-3 mt-3">
-          <p>{movie.overview}</p>
-          <p>
-            {movie.genres?.map((genre) => (
-              <span key={genre.id} className="badge text-bg-primary me-1">
-                {genre.name}{" "}
-              </span>
-            ))}
-          </p>
-          <button onClick={onHandleUnselectMovie} className="btn btn-danger">
-            Kapat
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Movie({ movie, onSelectMovie, selectMovie }) {
-  return (
-    <div className="col mb-2">
-      <div
-        className={`card movie ${
-          selectMovie === movie.id ? "selectedMovie" : ""
-        }`}
-        onClick={() => onSelectMovie(movie.id)}
-      >
-        <img
-          src={
-            movie.poster_path
-              ? `https://media.themoviedb.org/t/p/w440_and_h660_face` +
-                movie.poster_path
-              : "/img/no-image.jpg"
-          }
-          alt={movie.title}
-          className="card-img-top"
-        />
-        <div className="card-body">
-          <h6 className="card-title">{movie.title}</h6>
-          <div>
-            <i className="bi bi-calendar2-date me-1"></i>
-            <span>{movie.release_date}</span>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -314,61 +161,3 @@ function Movie({ movie, onSelectMovie, selectMovie }) {
   );
 }
 */
-function MyListSummary({ selectedMovieList }) {
-  const averageRating = getAvarage(selectedMovieList.map((m) => m.Rating));
-  const averageDuration = getAvarage(selectedMovieList.map((m) => m.Duration));
-  return (
-    <div className="card mb-2">
-      <div className="card-body">
-        <h5>Listem [{selectedMovieList.length}] Film Eklendi.</h5>
-        <div className="d-flex justify-content-between">
-          <p>
-            <i className="bi bi-star-fill text-warning me-1"></i>
-            <span>{averageRating.toFixed(2)}</span>
-          </p>
-          <p>
-            <i className="bi bi-hourglass-split text-warning me-1"></i>
-            <span>{averageDuration} dk</span>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MyMovieList({ selectedMovieList }) {
-  return selectedMovieList.map((seleceted) => (
-    <MyListMovie seleceted={seleceted} key={seleceted.Id} />
-  ));
-}
-
-function MyListMovie({ seleceted }) {
-  return (
-    <div className="card mb-2">
-      <div className="row">
-        <div className="col-4">
-          <img
-            src={seleceted.Poster}
-            alt={seleceted.Title}
-            className="img-fluid rounded-start"
-          />
-        </div>
-        <div className="col-8">
-          <div className="card-body">
-            <h6 className="card-title">{seleceted.Title}</h6>
-            <div className="d-flex justify-content-between">
-              <p>
-                <i className="bi bi-star-fill text-warning me-1"></i>
-                <span>{seleceted.Rating}</span>
-              </p>
-              <p>
-                <i className="bi bi-hourglass text-warning me-1"></i>
-                <span>{seleceted.Duration} dk</span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
