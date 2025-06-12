@@ -6,6 +6,9 @@ export default function MyListSummary({ selectedMovieList }) {
     selectedMovieList.map((m) => m.vote_average)
   );
   const averageDuration = getAvarage(selectedMovieList.map((m) => m.runtime));
+  const avarageUserRating = getAvarage(
+    selectedMovieList.map((m) => m.userRating)
+  );
   return (
     <div className="card mb-2">
       <div className="card-body">
@@ -14,6 +17,10 @@ export default function MyListSummary({ selectedMovieList }) {
           <p>
             <i className="bi bi-star-fill text-warning me-1"></i>
             <span>{averageRating.toFixed(2)}</span>
+          </p>
+          <p>
+            <i className="bi bi-stars text-warning me-1"></i>
+            <span>{avarageUserRating.toFixed(2)}</span>
           </p>
           <p>
             <i className="bi bi-hourglass-split text-warning me-1"></i>

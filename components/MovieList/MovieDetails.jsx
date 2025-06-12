@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import StarRating from "../../src/StarRating";
 import Loading from "../Main/Loading";
 const api_key = import.meta.env.VITE_API_KEY;
 
@@ -10,7 +11,19 @@ export default function MovieDetails({
 }) {
   const [movie, setMovie] = useState({});
   const [loading, setLoading] = useState(false);
+  const [userRating, setUserRating] = useState("");
   const isAddedToList = selectedMovies.map((m) => m.id).includes(selectMovie);
+  const selectedMovieUserRating = selectedMovies.find(
+    (m) => m.id === selectMovie
+  )?.userRating;
+
+  function handleAddToList(movie) {
+    const newMovie = {
+      ...movie,
+      userRating,
+    };
+    onAddToList(newMovie);
+  }
 
   useEffect(
     function () {
@@ -68,14 +81,27 @@ export default function MovieDetails({
                 ))}
               </p>
               {!isAddedToList ? (
-                <button
-                  className="btn btn-primary me-1"
-                  onClick={() => onAddToList(movie)}
-                >
-                  Listeye Ekle
-                </button>
+                <>
+                  <div className="my-4">
+                    <StarRating
+                      maxRating={10}
+                      size={20}
+                      onRating={setUserRating}
+                    />
+                  </div>
+                  <button
+                    className="btn btn-primary me-1"
+                    onClick={() => handleAddToList(movie)}
+                  >
+                    Listeye Ekle
+                  </button>
+                </>
               ) : (
-                <p>Film listenizde.</p>
+                <p>
+                  Film listenizde. Değerlendirme:{" "}
+                  <i className="bi bi-stars text-warning me-1"></i>
+                  {selectedMovieUserRating}
+                </p>
               )}
 
               <button
