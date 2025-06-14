@@ -13,12 +13,16 @@ import MyListSummary from "../components/MovieList/MyListSummary";
 import MyMovieList from "../components/MovieList/MyMovieList";
 import Pagination from "../components/Main/Pagination";
 import useMovies from "./hooks/useMovies";
+import useLocalStorage from "./hooks/useLocalStorage";
 
 // const query = "father";
 
 export default function App() {
   const [query, setQuery] = useState("");
-  const [selectedMovies, setSelectedMovies] = useState([]);
+  const [selectedMovies, setSelectedMovies] = useLocalStorage(
+    [],
+    "SelectedMovies"
+  );
   const [selectMovie, setSelectMovie] = useState(null);
 
   const {
