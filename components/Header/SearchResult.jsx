@@ -1,7 +1,7 @@
-export default function SearchResultNav({ movies }) {
+export default function SearchResultNav({ totalResults }) {
   return (
     <div className="col-4 text-end">
-      <strong>{movies.length}</strong> Kayıt bulundu.
+      <strong>{totalResults}</strong> Kayıt bulundu.
     </div>
   );
 }

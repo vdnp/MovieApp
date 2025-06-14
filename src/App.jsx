@@ -11,6 +11,7 @@ import Loading from "../components/Main/Loading";
 import ErrorMessage from "../components/Main/ErrorMessage";
 import MyListSummary from "../components/MovieList/MyListSummary";
 import MyMovieList from "../components/MovieList/MyMovieList";
+import Pagination from "../components/Main/Pagination";
 
 const api_key = import.meta.env.VITE_API_KEY;
 
@@ -23,6 +24,18 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState("");
   const [selectMovie, setSelectMovie] = useState(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalResults, setTotalResults] = useState(0);
+
+  function nextPage() {
+    setCurrentPage(currentPage + 1);
+  }
+
+  function previousPage() {
+    setCurrentPage(currentPage - 1);
+  }
 
   function handleSelectMovie(id) {
     setSelectMovie((selectMovie) => (id === selectMovie ? null : id));
@@ -48,12 +61,12 @@ export default function App() {
       const controller = new AbortController();
       const signal = controller.signal;
 
-      async function getMovies() {
+      async function getMovies(page) {
         try {
           setLoading(true);
           setErrors("");
           const res = await fetch(
-            `https://api.themoviedb.org/3/search/movie?api_key=${api_key}&query=${query}`,
+            `https://api.themoviedb.org/3/search/movie?api_key=${api_key}&query=${query}&page=${page}`,
             { signal: signal }
           );
 
@@ -67,6 +80,8 @@ export default function App() {
           }
 
           setMovies(data.results);
+          setTotalPages(data.total_pages);
+          setTotalResults(data.total_results);
         } catch (e) {
           if (e.name === "AbortError") {
             console.log("Aborted");
@@ -81,7 +96,7 @@ export default function App() {
           return;
         }
       }
-      getMovies();
+      getMovies(currentPage);
 
       return () => {
         controller.abort();
@@ -94,14 +109,14 @@ export default function App() {
       //   .then((res) => res.json())
       //   .then((data) => setMovies(data.results));
     },
-    [query]
+    [query, currentPage]
   );
   return (
     <>
       <Nav>
         <Logo />
         <Search query={query} setQuery={setQuery} />
-        <SearchResultNav movies={movies} />
+        <SearchResultNav totalResults={totalResults} />
       </Nav>
       <Main>
         <div className="row mt-2">
@@ -111,11 +126,24 @@ export default function App() {
               {/* {loading ? <Loading /> : <MovieList movies={movies} />} */}
               {loading && <Loading />}
               {!loading && !errors && (
-                <MovieList
-                  movies={movies}
-                  onSelectMovie={handleSelectMovie}
-                  selectMovie={selectMovie}
-                />
+                <>
+                  {movies.length > 0 && (
+                    <>
+                      {" "}
+                      <MovieList
+                        movies={movies}
+                        onSelectMovie={handleSelectMovie}
+                        selectMovie={selectMovie}
+                      />
+                      <Pagination
+                        nextPage={nextPage}
+                        previousPage={previousPage}
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                      />
+                    </>
+                  )}
+                </>
               )}
               {errors && <ErrorMessage eMessage={errors} />}
             </ListContainer>
