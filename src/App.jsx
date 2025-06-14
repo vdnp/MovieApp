@@ -45,12 +45,16 @@ export default function App() {
 
   useEffect(
     function () {
+      const controller = new AbortController();
+      const signal = controller.signal;
+
       async function getMovies() {
         try {
           setLoading(true);
           setErrors("");
           const res = await fetch(
-            `https://api.themoviedb.org/3/search/movie?api_key=${api_key}&query=${query}`
+            `https://api.themoviedb.org/3/search/movie?api_key=${api_key}&query=${query}`,
+            { signal: signal }
           );
 
           if (!res.ok) {
@@ -64,7 +68,11 @@ export default function App() {
 
           setMovies(data.results);
         } catch (e) {
-          setErrors(e.message);
+          if (e.name === "AbortError") {
+            console.log("Aborted");
+          } else {
+            setErrors(e.message);
+          }
         }
         setLoading(false);
         if (query.length < 1) {
@@ -74,6 +82,11 @@ export default function App() {
         }
       }
       getMovies();
+
+      return () => {
+        controller.abort();
+      };
+
       //First render(mount)
       // fetch(
       //   `https://api.themoviedb.org/3/search/movie?api_key=${api_key}&query=${query}`
