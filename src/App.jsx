@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Nav from "../components/Header/Nav";
 import Logo from "../components/Header/Logo";
 import Search from "../components/Header/Search";
@@ -12,30 +12,25 @@ import ErrorMessage from "../components/Main/ErrorMessage";
 import MyListSummary from "../components/MovieList/MyListSummary";
 import MyMovieList from "../components/MovieList/MyMovieList";
 import Pagination from "../components/Main/Pagination";
-
-const api_key = import.meta.env.VITE_API_KEY;
+import useMovies from "./hooks/useMovies";
 
 // const query = "father";
 
 export default function App() {
   const [query, setQuery] = useState("");
-  const [movies, setMovies] = useState([]);
   const [selectedMovies, setSelectedMovies] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState("");
   const [selectMovie, setSelectMovie] = useState(null);
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalResults, setTotalResults] = useState(0);
-
-  function nextPage() {
-    setCurrentPage(currentPage + 1);
-  }
-
-  function previousPage() {
-    setCurrentPage(currentPage - 1);
-  }
+  const {
+    movies,
+    loading,
+    errors,
+    currentPage,
+    totalPages,
+    totalResults,
+    nextPage,
+    previousPage,
+  } = useMovies(query);
 
   function handleSelectMovie(id) {
     setSelectMovie((selectMovie) => (id === selectMovie ? null : id));
@@ -56,61 +51,6 @@ export default function App() {
     );
   }
 
-  useEffect(
-    function () {
-      const controller = new AbortController();
-      const signal = controller.signal;
-
-      async function getMovies(page) {
-        try {
-          setLoading(true);
-          setErrors("");
-          const res = await fetch(
-            `https://api.themoviedb.org/3/search/movie?api_key=${api_key}&query=${query}&page=${page}`,
-            { signal: signal }
-          );
-
-          if (!res.ok) {
-            throw new Error("Bilinmeyen bir hata oluştu.");
-          }
-
-          const data = await res.json();
-          if (data.total_results === 0) {
-            throw new Error("Film bulunamadı!");
-          }
-
-          setMovies(data.results);
-          setTotalPages(data.total_pages);
-          setTotalResults(data.total_results);
-        } catch (e) {
-          if (e.name === "AbortError") {
-            console.log("Aborted");
-          } else {
-            setErrors(e.message);
-          }
-        }
-        setLoading(false);
-        if (query.length < 1) {
-          setMovies([]);
-          setErrors("");
-          return;
-        }
-      }
-      getMovies(currentPage);
-
-      return () => {
-        controller.abort();
-      };
-
-      //First render(mount)
-      // fetch(
-      //   `https://api.themoviedb.org/3/search/movie?api_key=${api_key}&query=${query}`
-      // )
-      //   .then((res) => res.json())
-      //   .then((data) => setMovies(data.results));
-    },
-    [query, currentPage]
-  );
   return (
     <>
       <Nav>

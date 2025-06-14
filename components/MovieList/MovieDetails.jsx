@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import StarRating from "../../src/StarRating";
 import Loading from "../Main/Loading";
-const api_key = import.meta.env.VITE_API_KEY;
+import useMovieDetails from "../../src/hooks/useMovieDetails";
 
 export default function MovieDetails({
   selectMovie,
@@ -9,9 +9,10 @@ export default function MovieDetails({
   onAddToList,
   selectedMovies,
 }) {
-  const [movie, setMovie] = useState({});
-  const [loading, setLoading] = useState(false);
   const [userRating, setUserRating] = useState("");
+
+  const { movie, loading } = useMovieDetails(selectMovie);
+
   const isAddedToList = selectedMovies.map((m) => m.id).includes(selectMovie);
   const selectedMovieUserRating = selectedMovies.find(
     (m) => m.id === selectMovie
@@ -25,22 +26,6 @@ export default function MovieDetails({
     onAddToList(newMovie);
   }
 
-  useEffect(
-    function () {
-      async function getMovieDetails() {
-        setLoading(true);
-        const res = await fetch(
-          `https://api.themoviedb.org/3/movie/${selectMovie}?api_key=${api_key}`
-        );
-        const data = await res.json();
-        setMovie(data);
-        setLoading(false);
-      }
-
-      getMovieDetails();
-    },
-    [selectMovie]
-  );
   return (
     <>
       {loading ? (
